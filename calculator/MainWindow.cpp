@@ -9,6 +9,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     // 初始化存储器
     memory = 0;
+    startfuc = 0;
    // this->setWindowIcon(QIcon("E:\\OJ\\QtApplication\\QtApplication1\\Icon\\Apptitle.jpg"));
 
     connect(ui->pushButton_0,SIGNAL(clicked()),this,SLOT(on_number_button_clicked()));
@@ -31,11 +32,16 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->Clean,SIGNAL(clicked()),this,SLOT(on_action_button_start_clicked()));
 
     connect(ui->DEL,SIGNAL(clicked()),this,SLOT(on_action_button_del_clicked()));
+    connect(ui->point,SIGNAL(clicked()),this,SLOT(on_action_button_point_clicked()));
 
     connect(ui->M_plus,SIGNAL(clicked()),this,SLOT(on_action_button_Mplus_clicked()));
     connect(ui->M_sub,SIGNAL(clicked()),this,SLOT(on_action_button_Msub_clicked()));
     connect(ui->MR,SIGNAL(clicked()),this,SLOT(on_action_button_MR_clicked()));
     connect(ui->MC,SIGNAL(clicked()),this,SLOT(on_action_button_MC_clicked()));
+
+    connect(ui->x2,SIGNAL(clicked()),this,SLOT(on_fuction_button_clicked()));
+    connect(ui->fuc1x,SIGNAL(clicked()),this,SLOT(on_fuction_button_clicked()));
+    //connect(ui->Tan,SIGNAL(clicked()),this,SLOT(on_fuction_button_clicked()));
 }
 
 MainWindow::~MainWindow()
@@ -43,11 +49,11 @@ MainWindow::~MainWindow()
     delete ui;
 }
 // 设置计算参数、计算函数
-void MainWindow::setnum1(int num)
+void MainWindow::setnum1(double num)
 {
     num1 = num;
 }
-void MainWindow::setnum2(int num)
+void MainWindow::setnum2(double num)
 {
     num2 = num;
 }
@@ -56,24 +62,41 @@ void MainWindow::setOpcode(int opcode)
       Opcode = opcode;
 }
 
-int MainWindow::calculate()
+double MainWindow::calculate()
 {
-    switch(Opcode)
+    if(startfuc == 1)
     {
-        case 0:{ result_ = num1 + num2;break;}// +
-        case 1:{ result_ = num1 - num2;break;};// -
-        case 2:{ result_ = num1 * num2;break;}// *
-        case 3:
+        if(fucCode == "1/x")
         {
-            if(num2 == 0) return -1;
-            else
-                result_ = num1 / num2;
-            break;
-        };// /
-        default:{ result_ = 0;}
+            result_ = 1 / num1;
+        }
+        else if(fucCode == "x2")
+        {
+            result_ = num1 * num1;
+        }
+
+        result_ = result_ + memory;
+        return result_;
     }
-    result_ = result_ + memory;
-    return result_;
+    else
+    {
+        switch(Opcode)
+        {
+            case 0:{ result_ = num1 + num2;break;}// +
+            case 1:{ result_ = num1 - num2;break;};// -
+            case 2:{ result_ = num1 * num2;break;}// *
+            case 3:
+            {
+                if(num2 == 0) return -1;
+                else
+                    result_ = num1 / num2;
+                break;
+            };// /
+            default:{ result_ = 0;}
+        }
+        result_ = result_ + memory;
+        return result_;
+    }
 }
 
 // 槽函数合集
@@ -89,20 +112,28 @@ void MainWindow::on_number_button_clicked()
 {
     QPushButton* btn = qobject_cast<QPushButton*>(sender());
     QString number_0 = btn->text();
+    QString temp = ui->input->toPlainText();
+    QString str;
 
-    ui->input->insertPlainText(number_0);
-    if(ui->input->toPlainText().size() == 0)
+    if(temp.contains("x2",Qt::CaseSensitive) ==1 ||
+       temp.contains("1/x",Qt::CaseSensitive)==1
+       )
     {
-        QString number_1 = ui->input->toPlainText();
+        str = number_0;
+        setnum1(str.toDouble());
+    }
+    else
+    {
+        str = temp + number_0;
         ui->input->clear();
-        // 合并字符串
-        ui->input->insertPlainText(number_1 + number_0);
+        ui->input->insertPlainText(str);
     }
 }
 void  MainWindow::on_Opcode_button_clicked()
 {
-    int number = ui->input->toPlainText().toInt();
+    double number = ui->input->toPlainText().toDouble();
     setnum1(number);
+
     QPushButton *btn = qobject_cast<QPushButton*>(sender());
     QString Opcode = btn->text();
     ui->input->insertPlainText(Opcode);
@@ -117,25 +148,39 @@ void  MainWindow::on_Opcode_button_clicked()
 }
 void MainWindow::on_action_button_equral_clicked()
 {
-    QString ssr = ui->input->toPlainText();
-    QString check;
-    for(int i=0;ssr[i]!='\0';i++)
+    if(startfuc == 1)
     {
-        if(ssr[i] == "+" || ssr[i] == "-" || ssr[i] == "*" || ssr[i] == "/")
-        {
-           for(int j=i+1;ssr[j]!='\0';j++)
-           {
-               check = check + ssr[j];
-           }
-        }
+        double result = calculate();
+        QString resultstr;
+        resultstr.setNum(result);
+        ui->output->insertPlainText(resultstr);
     }
-    int number = check.toInt();
-    setnum2(number);
-    int result = calculate();
+    else
+    {
+        QString ssr = ui->input->toPlainText();
+        QString check;
+        for(int i=0;ssr[i]!='\0';i++)
+        {
+            if(ssr[i] == "+" || ssr[i] == "-" || ssr[i] == "*" || ssr[i] == "/")
+            {
+               for(int j=i+1;ssr[j]!='\0';j++)
+               {
+                   check = check + ssr[j];
+               }
+            }
+        }
 
-    QString resultstr;
-    resultstr.setNum(result);
-    ui->output->insertPlainText(resultstr);
+        double number = check.toDouble();
+        setnum2(number);
+
+
+        double result = calculate();
+
+        QString resultstr;
+        resultstr.setNum(result);
+        ui->output->insertPlainText(resultstr);
+    }
+
 }
 
 void MainWindow::on_action_button_del_clicked()
@@ -149,13 +194,13 @@ void MainWindow::on_action_button_del_clicked()
 
 void MainWindow::on_action_button_Mplus_clicked()
 {
-    int number = ui->output->toPlainText().toInt();
+    double number = ui->output->toPlainText().toDouble();
     memory = number;
     ui->M->insertPlainText("M");
 }
 void MainWindow::on_action_button_Msub_clicked()
 {
-    int number = ui->output->toPlainText().toInt();
+    double number = ui->output->toPlainText().toDouble();
     memory = number * -1;
     ui->M->insertPlainText("M");
 }
@@ -174,9 +219,19 @@ void MainWindow::on_action_button_MC_clicked()
 }
 
 
+void MainWindow::on_action_button_point_clicked()
+{
+    ui->input->insertPlainText(".");
+}
 
-
-
+void MainWindow::on_fuction_button_clicked()
+{
+    QPushButton* btn = qobject_cast<QPushButton*>(sender());
+    fucCode = btn->text();
+    //可以进行fuc运算；
+    startfuc = 1;
+    ui->input->insertPlainText(fucCode);
+}
 
 
 
